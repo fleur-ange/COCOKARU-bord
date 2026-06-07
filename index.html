@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cocokaruボード | COCOKARU-LAB.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #f7f3ee;
+    --bg2: #eee8df;
+    --surface: #fffdf9;
+    --surface2: #f5f0e8;
+    --border: #ddd5c8;
+    --text: #3a2e26;
+    --text2: #7a6a5a;
+    --text3: #b0a090;
+    --accent: #c9856a;
+    --accent2: #e8a88e;
+    --red: #e05c5c;
+    --red-bg: #fff0f0;
+    --yellow: #d4a017;
+    --yellow-bg: #fffbe8;
+    --green: #5a9e6f;
+    --green-bg: #eef7f1;
+    --done-bg: #f0ece6;
+    --done-text: #a09080;
+    --puzzle-bg: #faf6f0;
+    --shadow: 0 2px 12px rgba(80,50,20,0.08);
+    --shadow-deep: 0 4px 24px rgba(80,50,20,0.14);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1.5px solid var(--border);
+    padding: 12px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(80,50,20,0.06);
+  }
+  .logo {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .logo span {
+    font-size: 10px;
+    color: var(--text3);
+    display: block;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    font-size: 18px;
+    transition: background 0.15s;
+    color: var(--text2);
+  }
+  .btn-icon:hover { background: var(--bg2); }
+
+  /* ── メインレイアウト ── */
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px 12px 100px;
+  }
+
+  /* ── セクション ── */
+  .section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .section-name {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .section-name:hover { background: var(--bg2); }
+  .section-name-edit {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    border: 1.5px solid var(--accent);
+    border-radius: 6px;
+    padding: 2px 8px;
+    background: white;
+    color: var(--text);
+    outline: none;
+    width: 140px;
+  }
+  .section-count {
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--bg2);
+    border-radius: 20px;
+    padding: 2px 8px;
+  }
+
+  /* ── 追加フォーム ── */
+  .add-form {
+    display: flex;
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .add-input {
+    flex: 1;
+    min-width: 120px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .add-input:focus { border-color: var(--accent); }
+  .urgency-select {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 6px;
+    font-size: 13px;
+    background: white;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .urgency-select:focus { border-color: var(--accent); }
+  .deadline-input {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 8px;
+    font-size: 12px;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 130px;
+  }
+  .deadline-input:focus { border-color: var(--accent); }
+  .btn-add {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 7px 14px;
+    font-size: 13px;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { background: var(--accent2); }
+  .btn-add:active { transform: scale(0.97); }
+
+  /* ── タスクリスト ── */
+  .task-list {
+    padding: 6px 8px;
+    min-height: 40px;
+  }
+
+  /* ── タスクアイテム ── */
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 10px;
+    margin: 4px 0;
+    background: white;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    transition: box-shadow 0.15s, border-color 0.15s, opacity 0.3s;
+    cursor: grab;
+    position: relative;
+    animation: taskIn 0.2s ease;
+  }
+  @keyframes taskIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .task-item:hover { box-shadow: var(--shadow); }
+  .task-item.dragging { opacity: 0.4; box-shadow: var(--shadow-deep); }
+  .task-item.drag-over { border-color: var(--accent); background: #fff8f5; }
+
+  .task-item.urgency-red   { border-left: 4px solid var(--red);    background: var(--red-bg); }
+  .task-item.urgency-yellow{ border-left: 4px solid var(--yellow); background: var(--yellow-bg); }
+  .task-item.urgency-green { border-left: 4px solid var(--green);  background: var(--green-bg); }
+
+  /* 完了済み（当日） */
+  .task-item.done-today {
+    opacity: 0.55;
+    border-left-color: var(--border) !important;
+    background: var(--done-bg) !important;
+    cursor: default;
+  }
+  .task-item.done-today .task-text { text-decoration: line-through; color: var(--done-text); }
+
+  .task-check {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: none;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: transparent;
+    margin-top: 1px;
+  }
+  .task-check:hover { border-color: var(--accent); color: var(--accent); }
+  .task-item.done-today .task-check {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: white;
+  }
+
+  .task-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .task-text {
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-word;
+    color: var(--text);
+  }
+  .task-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+  }
+  .urgency-badge {
+    font-size: 11px;
+    border-radius: 20px;
+    padding: 1px 7px;
+    font-weight: 500;
+  }
+  .badge-red    { background: #fde8e8; color: var(--red); }
+  .badge-yellow { background: #fdf3d0; color: #a07010; }
+  .badge-green  { background: #e0f5e8; color: var(--green); }
+
+  .task-deadline {
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .task-deadline.overdue { color: var(--red); font-weight: 500; }
+
+  .task-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .task-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    font-size: 14px;
+    color: var(--text3);
+    transition: color 0.15s, background 0.15s;
+  }
+  .task-btn:hover { color: var(--accent); background: var(--bg2); }
+
+  /* ── アーカイブ ── */
+  .archive-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text3);
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .archive-toggle:hover { background: var(--bg2); }
+  .archive-section { padding: 6px 8px 8px; border-top: 1px solid var(--border); display: none; }
+  .archive-section.open { display: block; }
+  .archive-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    margin: 3px 0;
+    background: var(--done-bg);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    opacity: 0.7;
+  }
+  .archive-item .task-text { text-decoration: line-through; color: var(--done-text); font-size: 12px; }
+  .archive-date { font-size: 10px; color: var(--text3); flex-shrink: 0; }
+
+  /* ── ルーティン ── */
+  .routine-section {
+    border-top: 1px solid var(--border);
+  }
+  .routine-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text3);
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .routine-toggle:hover { background: var(--bg2); }
+  .routine-inner { padding: 6px 10px 8px; display: none; }
+  .routine-inner.open { display: block; }
+  .routine-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .routine-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .routine-chip:hover { background: var(--accent2); color: white; border-color: var(--accent2); }
+  .routine-chip .del-routine {
+    font-size: 10px;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 50%;
+    transition: color 0.15s;
+  }
+  .routine-chip .del-routine:hover { color: var(--red); }
+  .routine-add-form {
+    display: flex;
+    gap: 6px;
+  }
+  .routine-input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 12px;
+    background: white;
+    color: var(--text);
+    outline: none;
+  }
+  .routine-input:focus { border-color: var(--accent); }
+  .btn-routine-add {
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: background 0.15s;
+  }
+  .btn-routine-add:hover { background: var(--border); }
+
+  /* ── やりたいことメモ ── */
+  .wish-section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .wish-header {
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .wish-textarea {
+    width: 100%;
+    border: none;
+    padding: 10px 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: white;
+    resize: vertical;
+    min-height: 70px;
+    outline: none;
+    line-height: 1.7;
+  }
+
+  /* ── パズルセクション ── */
+  .puzzle-section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .puzzle-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .puzzle-title {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .puzzle-count {
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .puzzle-grid-wrap {
+    padding: 14px;
+  }
+  .puzzle-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 3px;
+    max-width: 100%;
+  }
+  .puzzle-piece {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    cursor: default;
+    transition: transform 0.15s, background 0.3s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+  }
+  .puzzle-piece.filled {
+    background: var(--accent);
+    border-color: var(--accent2);
+    cursor: pointer;
+    animation: pieceIn 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .puzzle-piece.filled:hover { transform: scale(1.15); z-index: 2; }
+  @keyframes pieceIn {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  /* パズル色バリエーション */
+  .puzzle-piece.filled.c0 { background: #c9856a; border-color: #e8a88e; }
+  .puzzle-piece.filled.c1 { background: #7aab8e; border-color: #9ecfb4; }
+  .puzzle-piece.filled.c2 { background: #d4924a; border-color: #eab87a; }
+  .puzzle-piece.filled.c3 { background: #8aadcc; border-color: #adc8e0; }
+  .puzzle-piece.filled.c4 { background: #b88ab4; border-color: #d4aed0; }
+  .puzzle-piece.filled.c5 { background: #c4a44a; border-color: #e0c070; }
+
+  /* トースト（ピース詳細） */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--text);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    z-index: 999;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+    opacity: 0;
+    max-width: 90vw;
+    text-align: center;
+    pointer-events: none;
+    white-space: pre-line;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* パズル完了タスク一覧 */
+  .puzzle-archive-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text3);
+    border-top: 1px solid var(--border);
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .puzzle-archive-toggle:hover { background: var(--bg2); }
+  .puzzle-archive-list { padding: 6px 10px 10px; display: none; border-top: 1px solid var(--border); }
+  .puzzle-archive-list.open { display: block; }
+  .puzzle-archive-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin: 3px 0;
+    background: var(--bg2);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .puzzle-piece-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── モーダル（編集） ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(60,40,20,0.35);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: var(--shadow-deep);
+  }
+  .modal h3 {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 15px;
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+  .modal label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  .modal input, .modal select, .modal textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--accent); }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: flex-end;
+  }
+  .btn-cancel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text2);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .btn-save {
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 8px 20px;
+    font-size: 13px;
+    cursor: pointer;
+    color: white;
+    font-family: 'Zen Maru Gothic', sans-serif;
+  }
+  .btn-save:hover { background: var(--accent2); }
+
+  /* ── フッター ── */
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 6px 0 8px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text3);
+    z-index: 50;
+    letter-spacing: 0.08em;
+  }
+
+  /* 空メッセージ */
+  .empty-msg {
+    text-align: center;
+    color: var(--text3);
+    font-size: 12px;
+    padding: 14px 0 8px;
+  }
+
+  /* スクロールバー */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ドラッグ中（タッチ） */
+  .task-item.touch-drag {
+    position: fixed;
+    z-index: 300;
+    box-shadow: var(--shadow-deep);
+    opacity: 0.9;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    cocokaruボード
+    <span>COCOKARU-LAB.</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn-icon" title="データをリセット" onclick="confirmReset()">🗑️</button>
+  </div>
+</header>
+
+<main id="main-content"></main>
+
+<footer>© COCOKARU-LAB. All rights reserved.</footer>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>タスクを編集</h3>
+    <label>タスク名</label>
+    <input type="text" id="editText" />
+    <label>緊急度</label>
+    <select id="editUrgency">
+      <option value="red">🔴 急ぎ</option>
+      <option value="yellow">🟡 普通</option>
+      <option value="green">🟢 余裕</option>
+    </select>
+    <label>期限（任意）</label>
+    <input type="date" id="editDeadline" />
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────────
+// データ構造
+// ──────────────────────────────────────────────
+const STORAGE_KEY = 'cocokaru-v2';
+
+function defaultState() {
+  return {
+    sections: [
+      { id: 's1', name: '仕事', tasks: [], routines: [], archiveOpen: false, routineOpen: false },
+      { id: 's2', name: 'プライベート', tasks: [], routines: [], archiveOpen: false, routineOpen: false }
+    ],
+    wish: '',
+    puzzle: {
+      pieces: Array(80).fill(null), // null or { taskText, color }
+      archiveOpen: false
+    }
+  };
+}
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    // puzzle pieces 数の補正
+    if (!parsed.puzzle) parsed.puzzle = { pieces: Array(80).fill(null), archiveOpen: false };
+    if (!parsed.puzzle.pieces || parsed.puzzle.pieces.length !== 80) {
+      const old = parsed.puzzle.pieces || [];
+      const newPieces = Array(80).fill(null);
+      old.forEach((p, i) => { if (i < 80) newPieces[i] = p; });
+      parsed.puzzle.pieces = newPieces;
+    }
+    if (parsed.puzzle.archiveOpen === undefined) parsed.puzzle.archiveOpen = false;
+    // セクション互換
+    parsed.sections.forEach(s => {
+      if (!s.routines) s.routines = [];
+      if (!s.tasks) s.tasks = [];
+      if (s.archiveOpen === undefined) s.archiveOpen = false;
+      if (s.routineOpen === undefined) s.routineOpen = false;
+    });
+    return parsed;
+  } catch { return defaultState(); }
+}
+
+function saveState() {
+  archiveOldTasks();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// 翌日以降の完了タスクをアーカイブへ移動
+function archiveOldTasks() {
+  const t = today();
+  state.sections.forEach(s => {
+    s.tasks.forEach(task => {
+      if (task.done && task.doneDate && task.doneDate < t && !task.archived) {
+        task.archived = true;
+      }
+    });
+  });
+}
+
+// ──────────────────────────────────────────────
+// パズルユーティリティ
+// ──────────────────────────────────────────────
+const COLORS = ['c0','c1','c2','c3','c4','c5'];
+
+function addPuzzlePiece(taskText) {
+  const empty = [];
+  state.puzzle.pieces.forEach((p, i) => { if (!p) empty.push(i); });
+  if (empty.length === 0) return;
+  const idx = empty[Math.floor(Math.random() * empty.length)];
+  const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+  state.puzzle.pieces[idx] = { taskText, color, date: today() };
+}
+
+function removePuzzlePieceByTask(taskText) {
+  // 最後に追加されたものを消す
+  for (let i = state.puzzle.pieces.length - 1; i >= 0; i--) {
+    if (state.puzzle.pieces[i] && state.puzzle.pieces[i].taskText === taskText) {
+      state.puzzle.pieces[i] = null;
+      return;
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// レンダリング
+// ──────────────────────────────────────────────
+function render() {
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+
+  // パズルセクション
+  main.appendChild(renderPuzzle());
+
+  // 各セクション
+  state.sections.forEach(s => {
+    main.appendChild(renderSection(s));
+  });
+
+  // やりたいことメモ
+  main.appendChild(renderWish());
+
+  // ドラッグ&ドロップ初期化
+  initDragDrop();
+  initTouchDrag();
+}
+
+// ── セクション ──
+function renderSection(section) {
+  const div = document.createElement('div');
+  div.className = 'section';
+  div.dataset.sid = section.id;
+
+  // ヘッダー
+  const header = document.createElement('div');
+  header.className = 'section-header';
+
+  const activeTasks = section.tasks.filter(t => !t.done && !t.archived);
+  const doneTodayTasks = section.tasks.filter(t => t.done && !t.archived);
+  const archiveTasks = section.tasks.filter(t => t.archived);
+
+  const nameEl = document.createElement('button');
+  nameEl.className = 'section-name';
+  nameEl.textContent = section.name;
+  nameEl.title = 'クリックで名前を変更';
+  nameEl.onclick = () => startEditSectionName(section.id, nameEl);
+
+  const count = document.createElement('span');
+  count.className = 'section-count';
+  count.textContent = `${activeTasks.length}件`;
+
+  header.appendChild(nameEl);
+  header.appendChild(count);
+  div.appendChild(header);
+
+  // 追加フォーム
+  div.appendChild(renderAddForm(section.id));
+
+  // タスクリスト（未完了）
+  const list = document.createElement('div');
+  list.className = 'task-list';
+  list.dataset.sid = section.id;
+
+  const sorted = sortTasks(activeTasks);
+  if (sorted.length === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'empty-msg';
+    msg.textContent = 'タスクなし ✨';
+    list.appendChild(msg);
+  } else {
+    sorted.forEach(task => list.appendChild(renderTask(task, false)));
+  }
+
+  // 完了当日タスク（薄表示）
+  doneTodayTasks.forEach(task => list.appendChild(renderTask(task, true)));
+
+  div.appendChild(list);
+
+  // アーカイブ
+  if (archiveTasks.length > 0) {
+    const archToggle = document.createElement('div');
+    archToggle.className = 'archive-toggle';
+    archToggle.innerHTML = `<span>${section.archiveOpen ? '▲' : '▼'}</span> アーカイブ（${archiveTasks.length}件）`;
+    archToggle.onclick = () => {
+      section.archiveOpen = !section.archiveOpen;
+      saveState();
+      render();
+    };
+    div.appendChild(archToggle);
+
+    const archSection = document.createElement('div');
+    archSection.className = 'archive-section' + (section.archiveOpen ? ' open' : '');
+    archiveTasks.slice().reverse().forEach(task => {
+      const item = document.createElement('div');
+      item.className = 'archive-item';
+      const text = document.createElement('span');
+      text.className = 'task-text';
+      text.textContent = task.text;
+      const date = document.createElement('span');
+      date.className = 'archive-date';
+      date.textContent = task.doneDate || '';
+      const del = document.createElement('button');
+      del.className = 'task-btn';
+      del.innerHTML = '🗑️';
+      del.title = '削除';
+      del.onclick = () => deleteTask(section.id, task.id);
+      item.appendChild(text);
+      item.appendChild(date);
+      item.appendChild(del);
+      archSection.appendChild(item);
+    });
+    div.appendChild(archSection);
+  }
+
+  // ルーティン
+  div.appendChild(renderRoutineSection(section));
+
+  return div;
+}
+
+function sortTasks(tasks) {
+  const order = { red: 0, yellow: 1, green: 2 };
+  return [...tasks].sort((a, b) => (order[a.urgency] ?? 1) - (order[b.urgency] ?? 1));
+}
+
+// ── タスクアイテム ──
+function renderTask(task, isDoneToday) {
+  const item = document.createElement('div');
+  item.className = 'task-item' + (isDoneToday ? ' done-today' : ` urgency-${task.urgency}`);
+  if (!isDoneToday) {
+    item.draggable = true;
+    item.dataset.tid = task.id;
+    item.dataset.sid = task.sectionId;
+  }
+
+  // チェックボタン
+  const check = document.createElement('button');
+  check.className = 'task-check';
+  check.innerHTML = '✓';
+  check.title = isDoneToday ? 'TODO に戻す' : '完了';
+  check.onclick = () => {
+    if (isDoneToday) undoneTask(task.sectionId, task.id);
+    else doneTask(task.sectionId, task.id);
+  };
+  item.appendChild(check);
+
+  // 本体
+  const body = document.createElement('div');
+  body.className = 'task-body';
+
+  const text = document.createElement('div');
+  text.className = 'task-text';
+  text.textContent = task.text;
+  body.appendChild(text);
+
+  const meta = document.createElement('div');
+  meta.className = 'task-meta';
+
+  const badge = document.createElement('span');
+  badge.className = `urgency-badge badge-${task.urgency}`;
+  const labels = { red: '🔴 急ぎ', yellow: '🟡 普通', green: '🟢 余裕' };
+  badge.textContent = labels[task.urgency] || '';
+  meta.appendChild(badge);
+
+  if (task.deadline) {
+    const dl = document.createElement('span');
+    dl.className = 'task-deadline' + (task.deadline < today() && !isDoneToday ? ' overdue' : '');
+    dl.textContent = '📅 ' + task.deadline;
+    meta.appendChild(dl);
+  }
+  body.appendChild(meta);
+  item.appendChild(body);
+
+  // アクション
+  if (!isDoneToday) {
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'task-btn';
+    editBtn.innerHTML = '✏️';
+    editBtn.title = '編集';
+    editBtn.onclick = (e) => { e.stopPropagation(); openModal(task.sectionId, task.id); };
+    actions.appendChild(editBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'task-btn';
+    delBtn.innerHTML = '🗑️';
+    delBtn.title = '削除';
+    delBtn.onclick = (e) => { e.stopPropagation(); deleteTask(task.sectionId, task.id); };
+    actions.appendChild(delBtn);
+
+    item.appendChild(actions);
+  }
+
+  return item;
+}
+
+// ── 追加フォーム ──
+function renderAddForm(sid) {
+  const form = document.createElement('div');
+  form.className = 'add-form';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'add-input';
+  input.placeholder = 'タスクを入力...';
+  input.id = `input-${sid}`;
+
+  const urgency = document.createElement('select');
+  urgency.className = 'urgency-select';
+  urgency.id = `urgency-${sid}`;
+  urgency.innerHTML = `<option value="red">🔴</option><option value="yellow" selected>🟡</option><option value="green">🟢</option>`;
+
+  const deadline = document.createElement('input');
+  deadline.type = 'date';
+  deadline.className = 'deadline-input';
+  deadline.id = `deadline-${sid}`;
+
+  const btn = document.createElement('button');
+  btn.className = 'btn-add';
+  btn.textContent = '＋ 追加';
+  btn.onclick = () => addTask(sid);
+
+  input.onkeydown = (e) => { if (e.key === 'Enter') addTask(sid); };
+
+  form.appendChild(input);
+  form.appendChild(urgency);
+  form.appendChild(deadline);
+  form.appendChild(btn);
+  return form;
+}
+
+// ── ルーティン ──
+function renderRoutineSection(section) {
+  const wrap = document.createElement('div');
+  wrap.className = 'routine-section';
+
+  const toggle = document.createElement('div');
+  toggle.className = 'routine-toggle';
+  toggle.innerHTML = `<span>${section.routineOpen ? '▲' : '▼'}</span> ルーティン（${section.routines.length}件）`;
+  toggle.onclick = () => {
+    section.routineOpen = !section.routineOpen;
+    saveState();
+    render();
+  };
+  wrap.appendChild(toggle);
+
+  const inner = document.createElement('div');
+  inner.className = 'routine-inner' + (section.routineOpen ? ' open' : '');
+
+  const list = document.createElement('div');
+  list.className = 'routine-list';
+  section.routines.forEach((r, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'routine-chip';
+    const label = document.createElement('span');
+    label.textContent = r;
+    label.onclick = () => addRoutineTask(section.id, r);
+    const del = document.createElement('span');
+    del.className = 'del-routine';
+    del.innerHTML = '✕';
+    del.title = '削除';
+    del.onclick = (e) => { e.stopPropagation(); deleteRoutine(section.id, i); };
+    chip.appendChild(label);
+    chip.appendChild(del);
+    list.appendChild(chip);
+  });
+  inner.appendChild(list);
+
+  const addForm = document.createElement('div');
+  addForm.className = 'routine-add-form';
+  const rInput = document.createElement('input');
+  rInput.type = 'text';
+  rInput.className = 'routine-input';
+  rInput.placeholder = 'ルーティン名を入力...';
+  rInput.id = `routine-input-${section.id}`;
+  const rBtn = document.createElement('button');
+  rBtn.className = 'btn-routine-add';
+  rBtn.textContent = '＋';
+  rBtn.onclick = () => addRoutine(section.id);
+  rInput.onkeydown = (e) => { if (e.key === 'Enter') addRoutine(section.id); };
+  addForm.appendChild(rInput);
+  addForm.appendChild(rBtn);
+  inner.appendChild(addForm);
+
+  wrap.appendChild(inner);
+  return wrap;
+}
+
+// ── やりたいことメモ ──
+function renderWish() {
+  const sec = document.createElement('div');
+  sec.className = 'wish-section';
+  const h = document.createElement('div');
+  h.className = 'wish-header';
+  h.textContent = '🌱 やりたいことメモ';
+  sec.appendChild(h);
+  const ta = document.createElement('textarea');
+  ta.className = 'wish-textarea';
+  ta.placeholder = 'いつかやりたいこと、気になること...';
+  ta.value = state.wish;
+  ta.oninput = () => { state.wish = ta.value; saveState(); };
+  sec.appendChild(ta);
+  return sec;
+}
+
+// ── パズル ──
+function renderPuzzle() {
+  const sec = document.createElement('div');
+  sec.className = 'puzzle-section';
+
+  const filled = state.puzzle.pieces.filter(p => p !== null);
+
+  const header = document.createElement('div');
+  header.className = 'puzzle-header';
+  const title = document.createElement('div');
+  title.className = 'puzzle-title';
+  title.textContent = '🧩 達成パズル';
+  const cnt = document.createElement('div');
+  cnt.className = 'puzzle-count';
+  cnt.textContent = `${filled.length} / 80 ピース`;
+  header.appendChild(title);
+  header.appendChild(cnt);
+  sec.appendChild(header);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'puzzle-grid-wrap';
+  const grid = document.createElement('div');
+  grid.className = 'puzzle-grid';
+
+  state.puzzle.pieces.forEach((p, i) => {
+    const piece = document.createElement('div');
+    piece.className = 'puzzle-piece' + (p ? ` filled ${p.color}` : '');
+    if (p) {
+      piece.title = p.taskText;
+      piece.onclick = () => showToast(`✨ ${p.taskText}\n（${p.date}）`);
+    }
+    grid.appendChild(piece);
+  });
+  wrap.appendChild(grid);
+  sec.appendChild(wrap);
+
+  // 完了タスク一覧（折りたたみ）
+  if (filled.length > 0) {
+    const archToggle = document.createElement('div');
+    archToggle.className = 'puzzle-archive-toggle';
+    archToggle.innerHTML = `<span>${state.puzzle.archiveOpen ? '▲' : '▼'}</span> 達成したこと一覧（${filled.length}件）`;
+    archToggle.onclick = () => {
+      state.puzzle.archiveOpen = !state.puzzle.archiveOpen;
+      saveState();
+      render();
+    };
+    sec.appendChild(archToggle);
+
+    const archList = document.createElement('div');
+    archList.className = 'puzzle-archive-list' + (state.puzzle.archiveOpen ? ' open' : '');
+
+    filled.slice().reverse().forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'puzzle-archive-item';
+      const dot = document.createElement('div');
+      dot.className = 'puzzle-piece-dot';
+      dot.style.background = colorToHex(p.color);
+      const text = document.createElement('span');
+      text.textContent = p.taskText;
+      const date = document.createElement('span');
+      date.style.cssText = 'font-size:10px;color:var(--text3);margin-left:auto;flex-shrink:0;';
+      date.textContent = p.date;
+      item.appendChild(dot);
+      item.appendChild(text);
+      item.appendChild(date);
+      archList.appendChild(item);
+    });
+    sec.appendChild(archList);
+  }
+
+  return sec;
+}
+
+function colorToHex(c) {
+  const map = { c0:'#c9856a', c1:'#7aab8e', c2:'#d4924a', c3:'#8aadcc', c4:'#b88ab4', c5:'#c4a44a' };
+  return map[c] || '#c9856a';
+}
+
+// ──────────────────────────────────────────────
+// 操作
+// ──────────────────────────────────────────────
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function getSection(sid) {
+  return state.sections.find(s => s.id === sid);
+}
+
+function addTask(sid) {
+  const input = document.getElementById(`input-${sid}`);
+  const urgency = document.getElementById(`urgency-${sid}`);
+  const deadline = document.getElementById(`deadline-${sid}`);
+  const text = input.value.trim();
+  if (!text) return;
+  const s = getSection(sid);
+  s.tasks.push({
+    id: uid(),
+    sectionId: sid,
+    text,
+    urgency: urgency.value,
+    deadline: deadline.value,
+    done: false,
+    doneDate: null,
+    archived: false
+  });
+  input.value = '';
+  deadline.value = '';
+  saveState();
+  render();
+}
+
+function doneTask(sid, tid) {
+  const s = getSection(sid);
+  const t = s.tasks.find(t => t.id === tid);
+  if (!t) return;
+  t.done = true;
+  t.doneDate = today();
+  addPuzzlePiece(t.text);
+  saveState();
+  render();
+  showToast('✨ 完了！パズルが1ピース埋まりました');
+}
+
+function undoneTask(sid, tid) {
+  const s = getSection(sid);
+  const t = s.tasks.find(t => t.id === tid);
+  if (!t) return;
+  removePuzzlePieceByTask(t.text);
+  t.done = false;
+  t.doneDate = null;
+  t.archived = false;
+  saveState();
+  render();
+}
+
+function deleteTask(sid, tid) {
+  const s = getSection(sid);
+  const t = s.tasks.find(t => t.id === tid);
+  if (t && t.done) removePuzzlePieceByTask(t.text);
+  s.tasks = s.tasks.filter(t => t.id !== tid);
+  saveState();
+  render();
+}
+
+// ルーティン
+function addRoutine(sid) {
+  const input = document.getElementById(`routine-input-${sid}`);
+  const text = input.value.trim();
+  if (!text) return;
+  const s = getSection(sid);
+  if (!s.routines.includes(text)) s.routines.push(text);
+  input.value = '';
+  saveState();
+  render();
+}
+
+function addRoutineTask(sid, text) {
+  const s = getSection(sid);
+  s.tasks.push({
+    id: uid(),
+    sectionId: sid,
+    text,
+    urgency: 'yellow',
+    deadline: '',
+    done: false,
+    doneDate: null,
+    archived: false
+  });
+  saveState();
+  render();
+  showToast(`「${text}」を追加しました`);
+}
+
+function deleteRoutine(sid, idx) {
+  const s = getSection(sid);
+  s.routines.splice(idx, 1);
+  saveState();
+  render();
+}
+
+// セクション名編集
+function startEditSectionName(sid, el) {
+  const s = getSection(sid);
+  const input = document.createElement('input');
+  input.className = 'section-name-edit';
+  input.value = s.name;
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  const finish = () => {
+    const v = input.value.trim() || s.name;
+    s.name = v;
+    saveState();
+    render();
+  };
+  input.onblur = finish;
+  input.onkeydown = (e) => { if (e.key === 'Enter') finish(); };
+}
+
+// モーダル編集
+let editingTask = null;
+function openModal(sid, tid) {
+  const s = getSection(sid);
+  const t = s.tasks.find(t => t.id === tid);
+  if (!t) return;
+  editingTask = t;
+  document.getElementById('editText').value = t.text;
+  document.getElementById('editUrgency').value = t.urgency;
+  document.getElementById('editDeadline').value = t.deadline || '';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editingTask = null;
+}
+function saveEdit() {
+  if (!editingTask) return;
+  editingTask.text = document.getElementById('editText').value.trim() || editingTask.text;
+  editingTask.urgency = document.getElementById('editUrgency').value;
+  editingTask.deadline = document.getElementById('editDeadline').value;
+  closeModal();
+  saveState();
+  render();
+}
+document.getElementById('editModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// リセット
+function confirmReset() {
+  if (confirm('すべてのデータを削除してもよいですか？\nこの操作は取り消せません。')) {
+    localStorage.removeItem(STORAGE_KEY);
+    state = defaultState();
+    saveState();
+    render();
+  }
+}
+
+// トースト
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+// ──────────────────────────────────────────────
+// ドラッグ＆ドロップ（デスクトップ）
+// ──────────────────────────────────────────────
+let dragTask = null;
+let dragSid = null;
+
+function initDragDrop() {
+  document.querySelectorAll('.task-item[draggable="true"]').forEach(el => {
+    el.addEventListener('dragstart', onDragStart);
+    el.addEventListener('dragend', onDragEnd);
+    el.addEventListener('dragover', onDragOver);
+    el.addEventListener('dragleave', onDragLeave);
+    el.addEventListener('drop', onDrop);
+  });
+}
+
+function onDragStart(e) {
+  dragTask = e.currentTarget.dataset.tid;
+  dragSid  = e.currentTarget.dataset.sid;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  dragTask = null;
+  dragSid = null;
+}
+function onDragOver(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  if (target.dataset.tid === dragTask) return;
+  // 同じ緊急度のみ並び替え許可
+  const s = getSection(dragSid);
+  const dragT = s.tasks.find(t => t.id === dragTask);
+  const overT = s.tasks.find(t => t.id === target.dataset.tid);
+  if (!dragT || !overT || dragT.urgency !== overT.urgency) return;
+  target.classList.add('drag-over');
+}
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function onDrop(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  target.classList.remove('drag-over');
+  if (!dragTask || target.dataset.tid === dragTask) return;
+  const s = getSection(dragSid);
+  const fromIdx = s.tasks.findIndex(t => t.id === dragTask);
+  const toIdx   = s.tasks.findIndex(t => t.id === target.dataset.tid);
+  if (fromIdx < 0 || toIdx < 0) return;
+  if (s.tasks[fromIdx].urgency !== s.tasks[toIdx].urgency) return;
+  const [item] = s.tasks.splice(fromIdx, 1);
+  s.tasks.splice(toIdx, 0, item);
+  saveState();
+  render();
+}
+
+// ──────────────────────────────────────────────
+// タッチドラッグ（スマホ）
+// ──────────────────────────────────────────────
+function initTouchDrag() {
+  document.querySelectorAll('.task-item[draggable="true"]').forEach(el => {
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+  });
+}
+
+let touchDragEl = null;
+let touchDragClone = null;
+let touchDragTid = null;
+let touchDragSid = null;
+let touchLongTimer = null;
+let touchStartX = 0;
+let touchStartY = 0;
+
+function onTouchStart(e) {
+  const el = e.currentTarget;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchLongTimer = setTimeout(() => {
+    touchDragEl = el;
+    touchDragTid = el.dataset.tid;
+    touchDragSid = el.dataset.sid;
+    const rect = el.getBoundingClientRect();
+    touchDragClone = el.cloneNode(true);
+    touchDragClone.className += ' touch-drag';
+    touchDragClone.style.width = rect.width + 'px';
+    touchDragClone.style.left = rect.left + 'px';
+    touchDragClone.style.top  = rect.top  + 'px';
+    document.body.appendChild(touchDragClone);
+    el.style.opacity = '0.3';
+
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
+  }, 500);
+
+  el.addEventListener('touchmove', cancelLong, { once: true });
+  el.addEventListener('touchend', cancelLong, { once: true });
+}
+
+function cancelLong() {
+  clearTimeout(touchLongTimer);
+}
+
+function onTouchMove(e) {
+  if (!touchDragClone) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = touchDragClone.getBoundingClientRect();
+  touchDragClone.style.left = (touch.clientX - rect.width / 2) + 'px';
+  touchDragClone.style.top  = (touch.clientY - 24) + 'px';
+
+  // ホバー中のターゲット
+  document.querySelectorAll('.task-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+  touchDragClone.style.display = 'none';
+  const overEl = document.elementFromPoint(touch.clientX, touch.clientY);
+  touchDragClone.style.display = '';
+  if (overEl) {
+    const item = overEl.closest('.task-item[draggable]');
+    if (item && item.dataset.tid !== touchDragTid) {
+      const s = getSection(touchDragSid);
+      const dragT = s.tasks.find(t => t.id === touchDragTid);
+      const overT = s.tasks.find(t => t.id === item.dataset.tid);
+      if (dragT && overT && dragT.urgency === overT.urgency) {
+        item.classList.add('drag-over');
+      }
+    }
+  }
+}
+
+function onTouchEnd(e) {
+  if (!touchDragClone) return;
+  touchDragClone.remove();
+  touchDragClone = null;
+  if (touchDragEl) touchDragEl.style.opacity = '';
+
+  const overEl = document.querySelector('.task-item.drag-over');
+  if (overEl) {
+    overEl.classList.remove('drag-over');
+    const s = getSection(touchDragSid);
+    const fromIdx = s.tasks.findIndex(t => t.id === touchDragTid);
+    const toIdx   = s.tasks.findIndex(t => t.id === overEl.dataset.tid);
+    if (fromIdx >= 0 && toIdx >= 0 && s.tasks[fromIdx].urgency === s.tasks[toIdx].urgency) {
+      const [item] = s.tasks.splice(fromIdx, 1);
+      s.tasks.splice(toIdx, 0, item);
+      saveState();
+      render();
+    }
+  }
+
+  document.removeEventListener('touchmove', onTouchMove);
+  document.removeEventListener('touchend', onTouchEnd);
+  touchDragEl = null;
+  touchDragTid = null;
+  touchDragSid = null;
+}
+
+// ──────────────────────────────────────────────
+// 起動
+// ──────────────────────────────────────────────
+archiveOldTasks();
+saveState();
+render();
+</script>
+</body>
+</html>
