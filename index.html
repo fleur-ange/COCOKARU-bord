@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>cocokaruボード</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-serif;
+  background:linear-gradient(145deg,#f0f4ff 0%,#fdf0f8 50%,#f0fff8 100%);
+  min-height:100vh;padding:18px 12px 48px;
+}
+button{font-family:inherit;cursor:pointer}
+
+.task-card{cursor:grab;
+  background:#fff;border-radius:10px;padding:10px 10px 8px;margin-bottom:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.07);user-select:none;touch-action:none;position:relative;
+}
+.task-card.dragging{opacity:0.3}
+.task-card.drop-before::before{content:'';display:block;height:3px;background:#6366f1;border-radius:2px;margin-bottom:6px;}
+.task-card.drop-after::after{content:'';display:block;height:3px;background:#6366f1;border-radius:2px;margin-top:6px;}
+.col-inner.col-hover{background:#ede9fe!important;border-color:#a78bfa!important;}
+.task-text:active{text-decoration:underline}
+
+#drag-ghost{
+  position:fixed;pointer-events:none;z-index:9999;
+  background:#fff;border-radius:10px;padding:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.2);transform:rotate(2deg);opacity:0.92;
+  font-size:13px;color:#1f2937;max-width:160px;
+  font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+}
+
+.puzzle-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;}
+.puzzle-piece{aspect-ratio:1;border-radius:4px;background:#cbd5e1;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);transition:background .5s ease;}
+.piece-new{animation:popIn .45s cubic-bezier(.36,1.56,.64,1) both}
+
+.complete-overlay{
+  position:absolute;inset:0;background:rgba(255,255,255,0.93);border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  backdrop-filter:blur(3px);z-index:10;overflow:hidden;
+}
+.confetti{position:absolute;top:-10px;font-size:16px;animation:fall linear both;}
+
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(15,15,25,0.6);
+  display:flex;align-items:flex-end;justify-content:center;z-index:1000;
+}
+.modal-box{
+  background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;
+  width:100%;max-width:480px;max-height:92vh;overflow-y:auto;
+}
+.modal-title{font-size:18px;font-weight:700;color:#1e1b4b;margin-bottom:18px}
+.modal-textarea{width:100%;min-height:72px;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:15px;resize:none;font-family:inherit;outline:none;}
+.modal-textarea:focus{border-color:#6366f1}
+.modal-label{font-size:12px;font-weight:700;color:#6b7280;display:block;margin:14px 0 6px}
+.modal-date{width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 12px;font-size:15px;outline:none;font-family:inherit;}
+.modal-date:focus{border-color:#6366f1}
+.pill-row{display:flex;gap:8px;margin-top:4px}
+.pill{flex:1;padding:8px 4px;border-radius:8px;font-size:12px;font-family:inherit;font-weight:400;transition:all .15s;border:2px solid #e5e7eb;background:#fff;color:#9ca3af}
+.pill.active{font-weight:700}
+.modal-btns{display:flex;gap:10px;margin-top:20px}
+.btn-cancel{flex:1;padding:12px;border-radius:10px;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;font-size:15px;font-family:inherit}
+.btn-submit{flex:2;padding:12px;border-radius:10px;border:none;color:#fff;font-size:15px;font-weight:700;font-family:inherit}
+
+.section-name-edit{
+  background:rgba(255,255,255,0.25);border:1.5px solid rgba(255,255,255,0.6);
+  border-radius:8px;padding:3px 8px;font-size:16px;font-weight:700;
+  color:#fff;font-family:inherit;outline:none;width:120px;
+}
+.edit-pencil{cursor:pointer;font-size:13px;opacity:0.7;padding:4px;flex-shrink:0}
+
+.memo-tag{background:#fff;border:1.5px solid #f9731644;border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+.memo-input-row{display:flex;gap:8px;margin-bottom:14px}
+.memo-input{flex:1;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit;outline:none;}
+.memo-input:focus{border-color:#f97316}
+.btn-add-memo{background:#f97316;border:none;border-radius:10px;padding:10px 16px;color:#fff;font-weight:700;font-size:14px;font-family:inherit;white-space:nowrap;}
+
+.progress-bar{height:8px;background:#e5e7eb;border-radius:99px;margin-bottom:14px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:99px;transition:width .5s ease}
+
+/* 削除確認インライン */
+.del-confirm{
+  position:absolute;right:0;top:0;bottom:0;
+  background:#ef4444;border-radius:0 10px 10px 0;
+  display:flex;align-items:center;gap:6px;padding:0 12px;
+  font-size:12px;font-weight:700;color:#fff;z-index:2;
+}
+
+/* Show-more button */
+.show-more-btn{
+  width:100%;padding:7px;border-radius:8px;border:1.5px dashed #d1d5db;
+  background:transparent;color:#9ca3af;font-size:12px;font-family:inherit;
+  margin-top:4px;transition:all .15s;
+}
+.show-more-btn:active{background:#f3f4f6}
+
+@keyframes popIn{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+@keyframes fall{from{transform:translateY(0) rotate(0);opacity:1}to{transform:translateY(260px) rotate(400deg);opacity:0}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ═══ CONSTANTS ═══ */
+const STORAGE_KEY="cocokaru-v1";;
+const TOTAL=50;
+const URGENCY={
+  high:{label:'🔴 急ぎ',color:'#ef4444',bg:'#fef2f2',border:'#fca5a5'},
+  mid: {label:'🟡 普通',color:'#f59e0b',bg:'#fffbeb',border:'#fcd34d'},
+  low: {label:'🟢 余裕',color:'#10b981',bg:'#f0fdf4',border:'#6ee7b7'},
+};
+const COLS=[{id:'todo',label:'TODO',icon:'📋'},{id:'done',label:'完了',icon:'✅'}];
+const SK='#bfdbfe',NK='#1e1b4b';
+const THEMES=[
+  {hint:'No.1 🎁',reveal:'❤️ ハート',px:[SK,SK,'#ef4444','#ef4444',SK,SK,'#ef4444','#ef4444',SK,SK,SK,'#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444',SK,'#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444',SK,'#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444','#ef4444',SK,SK,SK,'#ef4444','#ef4444','#ef4444','#ef4444','#ef4444',SK,SK,SK]},
+  {hint:'No.2 🎁',reveal:'☀️ たいよう',px:['#fbbf24',SK,SK,'#fbbf24',SK,SK,'#fbbf24',SK,SK,'#fbbf24',SK,SK,'#f97316','#f97316','#f97316','#f97316','#f97316',SK,SK,SK,'#fbbf24','#f97316','#f97316','#fb923c','#fb923c','#fb923c','#f97316','#f97316','#f97316','#fbbf24',SK,SK,'#f97316','#f97316','#f97316','#f97316','#f97316',SK,SK,SK,'#fbbf24',SK,SK,'#fbbf24',SK,SK,'#fbbf24',SK,SK,'#fbbf24']},
+  {hint:'No.3 🎁',reveal:'🏠 おうち',px:[SK,SK,SK,'#ef4444','#ef4444','#ef4444','#ef4444',SK,SK,SK,SK,SK,'#ef4444','#dc2626','#dc2626','#dc2626','#dc2626','#ef4444',SK,SK,SK,'#ef4444','#dc2626','#dc2626','#dc2626','#dc2626','#dc2626','#dc2626','#ef4444',SK,SK,'#fef3c7','#fef3c7','#fef3c7','#92400e','#92400e','#fef3c7','#fef3c7','#fef3c7',SK,SK,'#fef3c7','#fef3c7','#fef3c7','#92400e','#92400e','#fef3c7','#fef3c7','#fef3c7',SK]},
+  {hint:'No.4 🎁',reveal:'🌸 さくら',px:[SK,'#fbcfe8','#fbcfe8',SK,SK,'#fbcfe8','#fbcfe8','#fbcfe8',SK,SK,'#fbcfe8','#f9a8d4','#f9a8d4','#fbcfe8',SK,'#fbcfe8','#f9a8d4','#f9a8d4','#fbcfe8',SK,SK,'#f9a8d4','#f472b6','#f9a8d4','#fbcfe8','#f9a8d4','#f472b6','#f9a8d4',SK,SK,SK,SK,SK,'#92400e','#92400e','#92400e',SK,SK,SK,SK,SK,SK,'#92400e','#92400e','#92400e','#92400e','#92400e',SK,SK,SK]},
+  {hint:'No.5 🎁',reveal:'🗻 ふじさん',px:[SK,SK,SK,SK,'#ffffff','#ffffff',SK,SK,SK,SK,SK,SK,SK,'#e2e8f0','#ffffff','#ffffff','#e2e8f0',SK,SK,SK,SK,SK,'#94a3b8','#94a3b8','#e2e8f0','#e2e8f0','#94a3b8','#94a3b8',SK,SK,SK,'#64748b','#64748b','#64748b','#94a3b8','#94a3b8','#64748b','#64748b','#64748b',SK,'#475569','#475569','#475569','#64748b','#64748b','#64748b','#64748b','#475569','#475569','#475569']},
+  {hint:'No.6 🎁',reveal:'⭐ ながれぼし',px:[NK,NK,NK,NK,NK,NK,NK,NK,'#fbbf24',NK,NK,NK,NK,NK,NK,NK,'#fbbf24','#fbbf24','#fef08a','#fbbf24',NK,NK,NK,NK,'#fbbf24','#fef08a','#fef08a','#fbbf24',NK,NK,NK,NK,'#fbbf24','#fbbf24','#fef08a','#fbbf24',NK,NK,NK,NK,'#fbbf24','#fef08a','#fbbf24',NK,NK,NK,NK,NK,NK,NK]},
+];
+const CONFETTI=['🎉','✨','🎊','⭐','🌟','💫','🎈','🎀'];
+
+/* ═══ STATE ═══ */
+function defaultState(){
+  return{
+    sections:[
+      {id:'s1',label:'仕事',icon:'💼',accent:'#6366f1'},
+      {id:'s2',label:'プライベート',icon:'🏠',accent:'#ec4899'},
+    ],
+    tasks:{
+      s1:[{id:1,text:'企画書の作成',col:'todo',urgency:'high',due:'2026-06-10'},{id:2,text:'週次レポート提出',col:'todo',urgency:'mid',due:''},{id:3,text:'メール返信',col:'done',urgency:'low',due:''}],
+      s2:[{id:4,text:'歯医者の予約',col:'todo',urgency:'high',due:'2026-06-15'},{id:5,text:'読書（30分）',col:'todo',urgency:'low',due:''},{id:6,text:'ジム',col:'done',urgency:'mid',due:''}],
+    },
+    routines:{s1:[],s2:[]},
+    memos:[{id:201,text:'北欧旅行に行ってみたい'},{id:202,text:'料理教室を探す'},{id:203,text:'ギター始めてみる'}],
+    puzzle:{themeIdx:0,revealed:[]},
+  };
+}
+function loadState(){
+  try{
+    const s=localStorage.getItem(STORAGE_KEY);
+    if(s){const p=JSON.parse(s);if(!p.routines)p.routines={s1:[],s2:[]};return p;}
+  }catch{}
+  return defaultState();
+}
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch{}}
+
+let state=loadState();
+let nextId=1000;
+try{const ids=[...Object.values(state.tasks).flat(),...state.memos].map(x=>x.id);if(ids.length)nextId=Math.max(...ids)+1;}catch{}
+
+let lastRevealedPiece=null;
+let editingMemoId=null;
+let expandedDone={};   // { sectionId: bool } - not persisted
+let editingSections={}; // { sectionId: bool }
+
+function setState(fn){
+  const scrollY=window.scrollY;
+  state=typeof fn==='function'?fn(state):{...state,...fn};
+  saveState();
+  render();
+  requestAnimationFrame(()=>window.scrollTo(0,scrollY));
+}
+
+/* ═══ PUZZLE ═══ */
+function revealOne(pz){
+  const{revealed}=pz;
+  if(revealed.length>=TOTAL)return{puzzle:pz,newPiece:null};
+  const used=new Set(revealed);
+  const pool=Array.from({length:TOTAL},(_,i)=>i).filter(i=>!used.has(i));
+  if(!pool.length)return{puzzle:pz,newPiece:null};
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  return{puzzle:{...pz,revealed:[...revealed,pick]},newPiece:pick};
+}
+
+/* ═══ DUE DATE ═══ */
+function formatDue(s){if(!s)return null;const[,m,d]=s.split('-');return`${+m}/${+d}`;}
+function dueStatus(s){
+  if(!s)return null;
+  const t=new Date();t.setHours(0,0,0,0);
+  const[y,m,d]=s.split('-').map(Number);
+  const diff=Math.round((new Date(y,m-1,d)-t)/86400000);
+  if(diff<0) return{label:`${Math.abs(diff)}日超過`,color:'#ef4444',bg:'#fef2f2'};
+  if(diff===0)return{label:'今日まで',color:'#ef4444',bg:'#fef2f2'};
+  if(diff<=3) return{label:`あと${diff}日`,color:'#f59e0b',bg:'#fffbeb'};
+  return{label:`あと${diff}日`,color:'#6b7280',bg:'#f3f4f6'};
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ═══ HTML BUILDERS ═══ */
+function buildCard(task,sid){
+  const u=URGENCY[task.urgency];
+  const ds=dueStatus(task.due);
+  const due=task.due&&ds?`<div style="padding-left:22px;margin-top:5px"><span style="font-size:11px;background:${ds.bg};color:${ds.color};font-weight:700;border-radius:6px;padding:2px 8px;border:1px solid ${ds.color}33">📅 ${formatDue(task.due)}　${ds.label}</span></div>`:'';
+
+  // 完了タスク用ボタン（繰り返し＋削除）
+  const doneActions = task.col==='done' ? `
+    <button data-action="repeat-task" data-id="${task.id}" data-section="${sid}"
+      style="background:none;border:none;font-size:16px;padding:2px 5px;flex-shrink:0;line-height:1;opacity:0.6" title="TODOに再登録">🔄</button>
+    <button data-action="del-task" data-id="${task.id}" data-section="${sid}"
+      style="background:none;border:none;color:#d1d5db;font-size:20px;padding:2px 5px;flex-shrink:0;line-height:1" title="削除">×</button>
+  ` : `
+    <button data-action="del-task" data-id="${task.id}" data-section="${sid}"
+      style="background:none;border:none;color:#d1d5db;font-size:20px;padding:2px 6px;flex-shrink:0;line-height:1" title="削除">×</button>
+  `;
+
+  return `<div class="task-card" data-id="${task.id}" data-section="${sid}" data-col="${task.col}"
+    style="border-left:4px solid ${u.color};border-top:1.5px solid ${u.border};border-right:1.5px solid ${u.border};border-bottom:1.5px solid ${u.border}">
+    <div style="display:flex;align-items:flex-start;gap:6px">
+      <span data-action="cycle" data-id="${task.id}" data-section="${sid}"
+        style="font-size:13px;padding:4px 2px;cursor:pointer;flex-shrink:0;line-height:1">${u.label.split(' ')[0]}</span>
+      <span class="task-text" data-action="edit-task" data-id="${task.id}" data-section="${sid}"
+        style="flex:1;font-size:14px;line-height:1.5;color:${task.col==='done'?'#9ca3af':'#1f2937'};cursor:pointer;padding:3px 0;${task.col==='done'?'text-decoration:line-through':''}">${esc(task.text)}</span>
+      ${doneActions}
+    </div>${due}</div>`;
+}
+
+function buildCol(col,tasks,sid,accent){
+  const ct=tasks.filter(t=>t.col===col.id);
+  let displayTasks=ct;
+  let extraBtn='';
+  const VISIBLE=5;
+
+  if(col.id==='done'){
+    if(!expandedDone[sid]&&ct.length>VISIBLE){
+      displayTasks=ct.slice(-VISIBLE); // 最新5件
+      const hidden=ct.length-VISIBLE;
+      extraBtn=`<button class="show-more-btn" data-action="expand-done" data-section="${sid}">📋 他 ${hidden} 件を見る</button>`;
+    } else if(expandedDone[sid]&&ct.length>VISIBLE){
+      extraBtn=`<button class="show-more-btn" data-action="collapse-done" data-section="${sid}">▲ 閉じる</button>`;
+    }
+  }
+
+  return `<div style="flex:1;margin:0 3px">
+    <div class="col-inner" data-col="${col.id}" data-section="${sid}"
+      style="background:#f3f4f6;border-radius:12px;padding:10px;min-height:90px;border:2px solid transparent;transition:all .15s">
+      <div style="font-size:12px;font-weight:700;color:#6b7280;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:4px">
+        ${col.icon} ${col.label}
+        <span style="margin-left:auto;background:#e5e7eb;border-radius:10px;padding:0 7px;font-size:11px;color:#9ca3af">${ct.length}</span>
+      </div>
+      <div class="cards-wrap" data-col="${col.id}" data-section="${sid}">
+        ${displayTasks.map(t=>buildCard(t,sid)).join('')}
+      </div>
+      ${extraBtn}
+      ${ct.length===0?`<div style="text-align:center;color:#d1d5db;font-size:12px;padding:14px 0">ここにドロップ</div>`:''}
+    </div></div>`;
+}
+
+function buildRoutineArea(sec){
+  const routines=state.routines[sec.id]||[];
+  if(routines.length===0&&!editingMemoId) {
+    // ルーティン追加ボタンのみ表示
+    return `<div style="padding:0 10px 12px;display:flex;gap:8px;align-items:center">
+      <button data-action="open-add-routine" data-section="${sec.id}"
+        style="background:none;border:1.5px dashed ${sec.accent}66;border-radius:8px;padding:7px 14px;color:${sec.accent};font-size:12px;font-family:inherit;font-weight:600">
+        🔄 ルーティンを登録
+      </button>
+    </div>`;
+  }
+  const tags=routines.map(r=>`
+    <span style="display:inline-flex;align-items:center;gap:5px;background:${sec.accent}12;border:1.5px solid ${sec.accent}33;border-radius:20px;padding:5px 10px;font-size:12px;color:${sec.accent};font-weight:600;margin:3px">
+      🔄 ${esc(r.text)}
+      <button data-action="routine-to-todo" data-section="${sec.id}" data-rid="${r.id}"
+        style="background:${sec.accent};border:none;border-radius:10px;padding:1px 7px;color:#fff;font-size:11px;font-weight:700;font-family:inherit" title="TODOに追加">▶ TODO</button>
+      <button data-action="del-routine" data-section="${sec.id}" data-rid="${r.id}"
+        style="background:none;border:none;color:${sec.accent}99;font-size:14px;padding:0 2px;line-height:1" title="削除">×</button>
+    </span>`).join('');
+  return `<div style="padding:0 10px 12px">
+    <div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.06em;margin-bottom:6px">🔄 ルーティン（タップでTODOに追加）</div>
+    <div style="display:flex;flex-wrap:wrap">${tags}</div>
+    <button data-action="open-add-routine" data-section="${sec.id}"
+      style="background:none;border:1.5px dashed ${sec.accent}55;border-radius:8px;padding:5px 12px;color:${sec.accent};font-size:11px;font-family:inherit;font-weight:600;margin-top:6px">
+      ＋ ルーティンを追加
+    </button>
+  </div>`;
+}
+
+function buildSection(sec){
+  const tasks=state.tasks[sec.id]||[];
+  const isEditing=editingSections[sec.id];
+  return `<div style="background:#fafafa;border-radius:20px;border:2px solid ${sec.accent}22;overflow:hidden;margin-bottom:16px">
+    <div style="background:linear-gradient(135deg,${sec.accent}ee,${sec.accent}bb);padding:13px 14px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">
+        <span style="font-size:18px;flex-shrink:0">${sec.icon}</span>
+        ${isEditing
+          ?`<input class="section-name-edit" data-section="${sec.id}" value="${esc(sec.label)}" maxlength="12" placeholder="名前を入力">`
+          :`<span style="font-weight:700;font-size:16px;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(sec.label)}</span>`
+        }
+        <span class="edit-pencil" data-action="toggle-name-edit" data-section="${sec.id}" title="名前を変更">✏️</span>
+        <span style="background:rgba(255,255,255,0.25);border-radius:20px;padding:1px 9px;font-size:12px;color:#fff;font-weight:600;flex-shrink:0">${tasks.length}</span>
+      </div>
+      <button data-action="open-add" data-section="${sec.id}"
+        style="background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.4);border-radius:8px;padding:7px 13px;color:#fff;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;margin-left:8px">
+        ＋ 追加
+      </button>
+    </div>
+    <div style="display:flex;padding:12px 10px 4px">
+      ${COLS.map(c=>buildCol(c,tasks,sec.id,sec.accent)).join('')}
+    </div>
+    ${buildRoutineArea(sec)}
+  </div>`;
+}
+
+function buildPuzzle(){
+  const{themeIdx,revealed}=state.puzzle;
+  const theme=THEMES[themeIdx%THEMES.length];
+  const revSet=new Set(revealed);
+  const complete=revealed.length>=TOTAL;
+  const pct=Math.round(revealed.length/TOTAL*100);
+  let pieces='';
+  for(let i=0;i<TOTAL;i++){
+    const rev=revSet.has(i);
+    const isNew=i===lastRevealedPiece;
+    pieces+=`<div class="puzzle-piece${isNew?' piece-new':''}" style="background:${rev?theme.px[i]:'#cbd5e1'};${rev?'box-shadow:inset 0 1px 0 rgba(255,255,255,0.3),0 1px 3px rgba(0,0,0,0.12)':''}"></div>`;
+  }
+  const conf=Array.from({length:16},(_,i)=>`<span class="confetti" style="left:${4+i*6}%;animation-delay:${(i*.12).toFixed(2)}s;animation-duration:${(1.1+Math.random()*.8).toFixed(2)}s">${CONFETTI[i%8]}</span>`).join('');
+  const overlay=complete?`<div class="complete-overlay">${conf}
+    <div style="font-size:40px;animation:bounce 0.6s ease infinite">🎉</div>
+    <div style="font-weight:900;font-size:20px;color:#1e1b4b">パズル完成！</div>
+    <div style="font-size:14px;color:#7c3aed;font-weight:700">答えは「${theme.reveal}」でした！</div>
+    <button data-action="next-puzzle" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:12px;padding:13px 28px;color:#fff;font-weight:700;font-size:15px;font-family:inherit;box-shadow:0 4px 16px rgba(124,58,237,0.4);margin-top:6px">次のパズルへ挑戦 →</button>
+  </div>`:'';
+  return `<div style="background:#fafafa;border-radius:20px;border:2px solid #a78bfa44;overflow:hidden;margin-bottom:16px">
+    <div style="background:linear-gradient(135deg,#7c3aedee,#a78bfabb);padding:13px 14px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">🧩</span>
+        <span style="font-weight:700;font-size:16px;color:#fff">完了チャレンジパズル</span>
+        <span style="background:rgba(255,255,255,0.2);border-radius:20px;padding:1px 9px;font-size:12px;color:#fff;font-weight:600">${complete?theme.reveal:theme.hint}</span>
+      </div>
+      <span style="color:rgba(255,255,255,0.9);font-size:13px;font-weight:700">${revealed.length}/${TOTAL}</span>
+    </div>
+    <div style="padding:14px;position:relative">
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="puzzle-grid">${pieces}</div>${overlay}
+    </div>
+  </div>`;
+}
+
+function buildMemo(){
+  const tags=state.memos.map(m=>{
+    if(editingMemoId===m.id){
+      return `<div class="memo-tag"><span>✨</span>
+        <input class="memo-edit-input" data-id="${m.id}" value="${esc(m.text)}"
+          style="border:none;outline:none;font-size:14px;font-family:inherit;color:#1f2937;background:transparent;min-width:80px;flex:1">
+        <button data-action="save-memo" data-id="${m.id}" style="background:#f97316;border:none;border-radius:6px;padding:3px 10px;color:#fff;font-size:11px;font-weight:700;font-family:inherit">保存</button>
+        <button data-action="cancel-memo" style="background:none;border:none;color:#9ca3af;font-size:16px;padding:2px 4px">✕</button>
+      </div>`;
+    }
+    return `<div class="memo-tag"><span>✨</span>
+      <span data-action="edit-memo" data-id="${m.id}" class="task-text" style="font-size:14px;color:#1f2937;cursor:pointer;line-height:1.5;flex:1">${esc(m.text)}</span>
+      <button data-action="del-memo" data-id="${m.id}" style="background:none;border:none;color:#d1d5db;font-size:18px;padding:2px 6px;line-height:1">×</button>
+    </div>`;
+  }).join('');
+  return `<div style="background:#fafafa;border-radius:20px;border:2px solid #f9731622;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#f97316ee,#f9731699);padding:13px 14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">✨</span>
+      <span style="font-weight:700;font-size:17px;color:#fff">やりたいこと</span>
+      <span style="background:rgba(255,255,255,0.25);border-radius:20px;padding:1px 10px;font-size:12px;color:#fff;font-weight:600">${state.memos.length}</span>
+    </div>
+    <div style="padding:14px">
+      <div class="memo-input-row">
+        <input class="memo-input" id="memo-new-input" placeholder="気になること・やりたいことを入力..." maxlength="60">
+        <button class="btn-add-memo" data-action="add-memo">＋ 追加</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        ${tags}
+        ${state.memos.length===0?'<span style="color:#d1d5db;font-size:13px;padding:6px 2px">気になることをどんどん追加しよう！</span>':''}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═══ RENDER ═══ */
+function render(){
+  document.getElementById('app').innerHTML=`
+    <div style="text-align:center;margin-bottom:20px">
+      <h1 style="font-size:26px;font-weight:900;background:linear-gradient(135deg,#6366f1,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px">📌 cocokaruボード</h1>
+      <p style="color:#9ca3af;font-size:11px">タスクをドラッグで移動　／　タップで編集　／　🔄 で繰り返し登録</p>
+    </div>
+    <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+      ${Object.values(URGENCY).map(u=>`<span style="display:inline-flex;align-items:center;gap:4px;background:${u.bg};border:1px solid ${u.border};border-radius:20px;padding:4px 10px;font-size:12px">${u.label.split(' ')[0]}<span style="color:${u.color};font-weight:700">${u.label.split(' ')[1]}</span></span>`).join('')}
+    </div>
+    ${state.sections.map(s=>buildSection(s)).join('')}
+    ${buildPuzzle()}
+    ${buildMemo()}`;
+  lastRevealedPiece=null;
+  attachEvents();
+  initDragAndDrop();
+}
+
+/* ═══ MODAL ═══ */
+function openModal(html){
+  const d=document.createElement('div');
+  d.className='modal-overlay';d.id='modal-overlay';
+  d.innerHTML=`<div class="modal-box">${html}</div>`;
+  d.addEventListener('click',e=>{if(e.target===d)closeModal();});
+  document.body.appendChild(d);
+}
+function closeModal(){const m=document.getElementById('modal-overlay');if(m)m.remove();}
+
+function openAddEditModal(sid,taskId){
+  const sec=state.sections.find(s=>s.id===sid);
+  const task=taskId!=null?state.tasks[sid].find(t=>t.id===taskId):null;
+  const isEdit=!!task;
+  let selUrgency=task?.urgency||'mid';
+  let selCol=task?.col||'todo';
+  const acc=sec.accent;
+  openModal(`
+    <div class="modal-title">${isEdit?'✏️ タスクを編集':'＋ タスクを追加'}</div>
+    <textarea class="modal-textarea" id="m-text" placeholder="タスクの内容...">${task?esc(task.text):''}</textarea>
+    <label class="modal-label">📅 期限（任意）</label>
+    <input type="date" class="modal-date" id="m-due" value="${task?.due||''}">
+    <span id="m-clear-due" style="font-size:11px;color:#9ca3af;cursor:pointer;display:${task?.due?'inline':'none'}">× 期限を削除</span>
+    <label class="modal-label">緊急度</label>
+    <div class="pill-row" id="urg-row">
+      ${Object.entries(URGENCY).map(([k,v])=>`<button class="pill urgency-pill${selUrgency===k?' active':''}" data-urg="${k}"
+        style="${selUrgency===k?`border-color:${v.color};background:${v.bg};color:${v.color};font-weight:700`:''}">${v.label}</button>`).join('')}
+    </div>
+    <label class="modal-label">列</label>
+    <div class="pill-row" id="col-row">
+      ${COLS.map(c=>`<button class="pill col-pill${selCol===c.id?' active':''}" data-col="${c.id}"
+        style="${selCol===c.id?`border-color:${acc};background:${acc}18;color:${acc};font-weight:700`:''}">${c.icon} ${c.label}</button>`).join('')}
+    </div>
+    ${isEdit?'':
+      `<label class="modal-label">🔄 ルーティン登録</label>
+      <button id="m-as-routine" style="border:1.5px dashed ${acc}66;border-radius:8px;padding:8px 14px;background:none;color:${acc};font-size:13px;font-family:inherit;font-weight:600;width:100%">
+        ルーティンとして登録する
+      </button>`
+    }
+    <div class="modal-btns">
+      <button class="btn-cancel" id="m-cancel">キャンセル</button>
+      <button class="btn-submit" id="m-submit" style="background:${acc}">${isEdit?'保存する':'追加する'}</button>
+    </div>`);
+
+  const box=document.querySelector('.modal-box');
+  box.querySelector('#m-clear-due').addEventListener('click',()=>{
+    box.querySelector('#m-due').value='';
+    box.querySelector('#m-clear-due').style.display='none';
+  });
+  box.querySelector('#m-due').addEventListener('change',e=>{
+    box.querySelector('#m-clear-due').style.display=e.target.value?'inline':'none';
+  });
+  box.querySelectorAll('.urgency-pill').forEach(b=>{
+    b.addEventListener('click',()=>{
+      selUrgency=b.dataset.urg;
+      box.querySelectorAll('.urgency-pill').forEach(x=>{
+        const v=URGENCY[x.dataset.urg];const on=x.dataset.urg===selUrgency;
+        x.className='pill urgency-pill'+(on?' active':'');
+        x.style.cssText=on?`border-color:${v.color};background:${v.bg};color:${v.color};font-weight:700`:'';
+      });
+    });
+  });
+  box.querySelectorAll('.col-pill').forEach(b=>{
+    b.addEventListener('click',()=>{
+      selCol=b.dataset.col;
+      box.querySelectorAll('.col-pill').forEach(x=>{
+        const on=x.dataset.col===selCol;
+        x.className='pill col-pill'+(on?' active':'');
+        x.style.cssText=on?`border-color:${acc};background:${acc}18;color:${acc};font-weight:700`:'';
+      });
+    });
+  });
+  const routineBtn=box.querySelector('#m-as-routine');
+  if(routineBtn){
+    routineBtn.addEventListener('click',()=>{
+      const text=box.querySelector('#m-text').value.trim();
+      if(!text)return;
+      setState(s=>({...s,routines:{...s.routines,[sid]:[...(s.routines[sid]||[]),{id:nextId++,text,urgency:selUrgency}]}}));
+      closeModal();
+    });
+  }
+  box.querySelector('#m-cancel').addEventListener('click',closeModal);
+  box.querySelector('#m-submit').addEventListener('click',()=>{
+    const text=box.querySelector('#m-text').value.trim();
+    if(!text)return;
+    const due=box.querySelector('#m-due').value;
+    if(isEdit){
+      setState(s=>{
+        const wasNotDone=s.tasks[sid].find(t=>t.id===taskId)?.col!=='done';
+        const{puzzle:np,newPiece}=wasNotDone&&selCol==='done'?revealOne(s.puzzle):{puzzle:s.puzzle,newPiece:null};
+        if(newPiece!=null)lastRevealedPiece=newPiece;
+        return{...s,puzzle:np,tasks:{...s.tasks,[sid]:s.tasks[sid].map(t=>t.id===taskId?{...t,text,urgency:selUrgency,col:selCol,due}:t)}};
+      });
+    } else {
+      setState(s=>({...s,tasks:{...s.tasks,[sid]:[...s.tasks[sid],{id:nextId++,text,urgency:selUrgency,col:selCol,due}]}}));
+    }
+    closeModal();
+  });
+  setTimeout(()=>{const ta=box.querySelector('#m-text');if(ta)ta.focus();},50);
+}
+
+function openAddRoutineModal(sid){
+  const sec=state.sections.find(s=>s.id===sid);
+  const acc=sec.accent;
+  openModal(`
+    <div class="modal-title">🔄 ルーティンを登録</div>
+    <textarea class="modal-textarea" id="r-text" placeholder="毎日・毎週やること（例：ジム、読書30分）"></textarea>
+    <label class="modal-label">緊急度</label>
+    <div class="pill-row" id="rurg-row">
+      ${Object.entries(URGENCY).map(([k,v])=>`<button class="pill urgency-pill${k==='low'?' active':''}" data-urg="${k}"
+        style="${k==='low'?`border-color:${v.color};background:${v.bg};color:${v.color};font-weight:700`:''}">${v.label}</button>`).join('')}
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="r-cancel">キャンセル</button>
+      <button class="btn-submit" id="r-submit" style="background:${acc}">登録する</button>
+    </div>`);
+  const box=document.querySelector('.modal-box');
+  let selUrg='low';
+  box.querySelectorAll('.urgency-pill').forEach(b=>{
+    b.addEventListener('click',()=>{
+      selUrg=b.dataset.urg;
+      box.querySelectorAll('.urgency-pill').forEach(x=>{
+        const v=URGENCY[x.dataset.urg];const on=x.dataset.urg===selUrg;
+        x.className='pill urgency-pill'+(on?' active':'');
+        x.style.cssText=on?`border-color:${v.color};background:${v.bg};color:${v.color};font-weight:700`:'';
+      });
+    });
+  });
+  box.querySelector('#r-cancel').addEventListener('click',closeModal);
+  box.querySelector('#r-submit').addEventListener('click',()=>{
+    const text=box.querySelector('#r-text').value.trim();
+    if(!text)return;
+    setState(s=>({...s,routines:{...s.routines,[sid]:[...(s.routines[sid]||[]),{id:nextId++,text,urgency:selUrg}]}}));
+    closeModal();
+  });
+  setTimeout(()=>{const ta=box.querySelector('#r-text');if(ta)ta.focus();},50);
+}
+
+/* ═══ EVENTS ═══ */
+function attachEvents(){
+  document.addEventListener('click',handleClick,{once:true});
+  document.querySelectorAll('.section-name-edit').forEach(inp=>{
+    inp.addEventListener('blur',()=>{
+      const sid=inp.dataset.section;
+      const label=inp.value.trim()||'セクション';
+      editingSections[sid]=false;
+      setState(s=>({...s,sections:s.sections.map(sec=>sec.id===sid?{...sec,label}:sec)}));
+    });
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter')inp.blur();
+      if(e.key==='Escape'){editingSections[inp.dataset.section]=false;render();}
+    });
+    setTimeout(()=>inp.focus(),30);
+  });
+  document.querySelectorAll('.memo-edit-input').forEach(inp=>{
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){const t=inp.value.trim();if(!t)return;setState(s=>({...s,memos:s.memos.map(m=>m.id===Number(inp.dataset.id)?{...m,text:t}:m)}));editingMemoId=null;}
+      if(e.key==='Escape'){editingMemoId=null;render();}
+    });
+    setTimeout(()=>inp.focus(),30);
+  });
+  const ni=document.getElementById('memo-new-input');
+  if(ni)ni.addEventListener('keydown',e=>{if(e.key==='Enter')addMemo();});
+}
+
+function handleClick(e){
+  const el=e.target.closest('[data-action]');
+  document.addEventListener('click',handleClick,{once:true});
+  if(!el)return;
+  const a=el.dataset.action,sid=el.dataset.section,id=el.dataset.id?Number(el.dataset.id):null,rid=el.dataset.rid?Number(el.dataset.rid):null;
+
+  if(a==='open-add')         {openAddEditModal(sid,null);return;}
+  if(a==='edit-task')        {openAddEditModal(sid,id);return;}
+  if(a==='del-task')         {setState(s=>({...s,tasks:{...s.tasks,[sid]:s.tasks[sid].filter(t=>t.id!==id)}}));return;}
+  if(a==='cycle')            {cycleUrgency(sid,id);return;}
+  if(a==='repeat-task')      {repeatTask(sid,id);return;}
+  if(a==='toggle-name-edit') {editingSections[sid]=!editingSections[sid];render();return;}
+  if(a==='next-puzzle')      {setState(s=>({...s,puzzle:{themeIdx:(s.puzzle.themeIdx+1)%THEMES.length,revealed:[]}}));return;}
+  if(a==='expand-done')      {expandedDone[sid]=true;render();return;}
+  if(a==='collapse-done')    {expandedDone[sid]=false;render();return;}
+  if(a==='add-memo')         {addMemo();return;}
+  if(a==='del-memo')         {setState(s=>({...s,memos:s.memos.filter(m=>m.id!==id)}));return;}
+  if(a==='edit-memo')        {editingMemoId=id;render();return;}
+  if(a==='save-memo')        {
+    const inp=document.querySelector(`.memo-edit-input[data-id="${id}"]`);
+    const t=inp?.value.trim();
+    if(t)setState(s=>({...s,memos:s.memos.map(m=>m.id===id?{...m,text:t}:m)}));
+    editingMemoId=null;render();return;
+  }
+  if(a==='cancel-memo')      {editingMemoId=null;render();return;}
+  if(a==='open-add-routine') {openAddRoutineModal(sid);return;}
+  if(a==='routine-to-todo')  {
+    const r=(state.routines[sid]||[]).find(x=>x.id===rid);
+    if(r)setState(s=>({...s,tasks:{...s.tasks,[sid]:[...s.tasks[sid],{id:nextId++,text:r.text,urgency:r.urgency,col:'todo',due:''}]}}));
+    return;
+  }
+  if(a==='del-routine')      {setState(s=>({...s,routines:{...s.routines,[sid]:(s.routines[sid]||[]).filter(r=>r.id!==rid)}}));return;}
+}
+
+function addMemo(){
+  const inp=document.getElementById('memo-new-input');
+  if(!inp)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  setState(s=>({...s,memos:[...s.memos,{id:nextId++,text}]}));
+}
+function cycleUrgency(sid,id){
+  const order=['high','mid','low'];
+  setState(s=>({...s,tasks:{...s.tasks,[sid]:s.tasks[sid].map(t=>t.id===id?{...t,urgency:order[(order.indexOf(t.urgency)+1)%3]}:t)}}));
+}
+function repeatTask(sid,id){
+  const task=state.tasks[sid].find(t=>t.id===id);
+  if(!task)return;
+  setState(s=>({...s,tasks:{...s.tasks,[sid]:[...s.tasks[sid],{id:nextId++,text:task.text,urgency:task.urgency,col:'todo',due:''}]}}));
+}
+function moveTask(sid,taskId,newCol,targetId,pos){
+  setState(s=>{
+    const list=s.tasks[sid];
+    const task=list.find(t=>t.id===taskId);
+    if(!task)return s;
+    const{puzzle:np,newPiece}=task.col!=='done'&&newCol==='done'?revealOne(s.puzzle):{puzzle:s.puzzle,newPiece:null};
+    if(newPiece!=null)lastRevealedPiece=newPiece;
+    let nl=list.filter(t=>t.id!==taskId);
+    const upd={...task,col:newCol};
+    if(!targetId||pos==='append'){nl=[...nl,upd];}
+    else{const i=nl.findIndex(t=>t.id===targetId);const at=i<0?nl.length:pos==='before'?i:i+1;nl=[...nl.slice(0,at),upd,...nl.slice(at)];}
+    return{...s,puzzle:np,tasks:{...s.tasks,[sid]:nl}};
+  });
+}
+
+/* ═══ DRAG AND DROP (Pointer Events) ═══ */
+let drag=null;
+let longPressTimer=null;
+const LONG_PRESS_MS=400;
+
+function initDragAndDrop(){
+  document.querySelectorAll('.task-card').forEach(card=>{
+    // タッチ
+    card.addEventListener('touchstart',onTouchStart,{passive:false});
+    // マウス
+    card.addEventListener('mousedown',onMouseDown);
+  });
+}
+
+/* ── タッチ用（長押しでドラッグ開始） ── */
+function onTouchStart(e){
+  if(e.target.closest('[data-action]'))return;
+  const touch=e.touches[0];
+  const card=e.currentTarget;
+  longPressTimer=setTimeout(()=>{
+    navigator.vibrate&&navigator.vibrate(30);
+    startDrag(card,touch.clientX,touch.clientY);
+    document.addEventListener('touchmove',onTouchMove,{passive:false});
+    document.addEventListener('touchend',onTouchEnd);
+    document.addEventListener('touchcancel',cancelDrag);
+  },LONG_PRESS_MS);
+  // 少し動いたらキャンセル
+  const cancel=()=>{clearTimeout(longPressTimer);document.removeEventListener('touchmove',cancel);};
+  document.addEventListener('touchmove',cancel,{passive:true,once:true});
+}
+function onTouchMove(e){
+  if(!drag)return;
+  e.preventDefault();
+  const touch=e.touches[0];
+  moveGhost(touch.clientX,touch.clientY);
+  updateIndicator(touch.clientX,touch.clientY);
+}
+function onTouchEnd(e){
+  if(!drag)return;
+  const touch=e.changedTouches[0];
+  dropAt(touch.clientX,touch.clientY);
+  document.removeEventListener('touchmove',onTouchMove);
+  document.removeEventListener('touchend',onTouchEnd);
+  document.removeEventListener('touchcancel',cancelDrag);
+  cleanupDrag();
+}
+
+/* ── マウス用 ── */
+function onMouseDown(e){
+  if(e.target.closest('[data-action]'))return;
+  if(e.button!==0)return;
+  const card=e.currentTarget;
+  startDrag(card,e.clientX,e.clientY);
+  document.addEventListener('mousemove',onMouseMove);
+  document.addEventListener('mouseup',onMouseUp);
+}
+function onMouseMove(e){
+  if(!drag)return;
+  moveGhost(e.clientX,e.clientY);
+  updateIndicator(e.clientX,e.clientY);
+}
+function onMouseUp(e){
+  if(!drag)return;
+  dropAt(e.clientX,e.clientY);
+  document.removeEventListener('mousemove',onMouseMove);
+  document.removeEventListener('mouseup',onMouseUp);
+  cleanupDrag();
+}
+
+/* ── 共通 ── */
+function startDrag(card,x,y){
+  const rect=card.getBoundingClientRect();
+  const ghost=document.createElement('div');
+  ghost.id='drag-ghost';
+  const task=state.tasks[card.dataset.section]?.find(t=>t.id===Number(card.dataset.id));
+  ghost.textContent=task?task.text:'';
+  ghost.style.width=Math.min(rect.width,200)+'px';
+  document.body.appendChild(ghost);
+  drag={taskId:Number(card.dataset.id),sid:card.dataset.section,card,ghost,offX:x-rect.left,offY:y-rect.top};
+  card.classList.add('dragging');
+  moveGhost(x,y);
+}
+function moveGhost(x,y){
+  if(!drag)return;
+  drag.ghost.style.left=(x-drag.offX)+'px';
+  drag.ghost.style.top=(y-drag.offY)+'px';
+}
+function updateIndicator(x,y){
+  drag.ghost.style.visibility='hidden';
+  const el=document.elementFromPoint(x,y);
+  drag.ghost.style.visibility='';
+  clearIndicators();
+  if(!el)return;
+  const tc=el.closest('.task-card');
+  const ci=el.closest('.col-inner');
+  if(tc&&tc!==drag.card){
+    const r=tc.getBoundingClientRect();
+    tc.classList.add(y<r.top+r.height/2?'drop-before':'drop-after');
+  } else if(ci){
+    ci.classList.add('col-hover');
+  }
+}
+function dropAt(x,y){
+  if(!drag)return;
+  drag.ghost.style.visibility='hidden';
+  const el=document.elementFromPoint(x,y);
+  drag.ghost.style.visibility='';
+  if(!el)return;
+  const tc=el.closest('.task-card');
+  const ci=el.closest('.col-inner');
+  if(tc&&tc!==drag.card){
+    const r=tc.getBoundingClientRect();
+    moveTask(drag.sid,drag.taskId,tc.dataset.col,Number(tc.dataset.id),y<r.top+r.height/2?'before':'after');
+  } else if(ci){
+    moveTask(drag.sid,drag.taskId,ci.dataset.col,null,'append');
+  }
+}
+function cancelDrag(){cleanupDrag();}
+function cleanupDrag(){
+  clearTimeout(longPressTimer);
+  if(!drag)return;
+  drag.ghost.remove();
+  drag.card.classList.remove('dragging');
+  clearIndicators();
+  drag=null;
+}
+function clearIndicators(){
+  document.querySelectorAll('.drop-before,.drop-after,.col-hover').forEach(el=>el.classList.remove('drop-before','drop-after','col-hover'));
+}
+
+render();
+</script>
+<div style="text-align:center;padding:16px 0 8px;font-size:11px;color:#c4c4c4;font-family:-apple-system,sans-serif">© COCOKARU-LAB. All rights reserved.</div>
+</body>
+</html>
